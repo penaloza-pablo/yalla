@@ -38,6 +38,12 @@ type AlertRow = {
   snoozeUntil?: string
 }
 
+type ChatMessage = {
+  id: string
+  role: string
+  content: string
+}
+
 type InventoryFormState = {
   id: string
   name: string
@@ -487,6 +493,7 @@ function App() {
   const [chatInput, setChatInput] = useState('')
   const [{ data: chatData, isLoading: isChatLoading }, handleSendMessage] =
     useAIConversation('chatbot')
+  const chatMessages = (chatData?.messages ?? []) as ChatMessage[]
 
   const lowStockCount = useMemo(
     () =>
@@ -1635,8 +1642,8 @@ function App() {
             </p>
             <div className="chatbot-container">
               <div className="chat-window">
-                {chatData?.messages?.length ? (
-                  chatData.messages.map((message) => (
+                {chatMessages.length ? (
+                  chatMessages.map((message) => (
                     <div
                       className={`chat-message ${
                         message.role === 'user' ? 'is-user' : 'is-assistant'
