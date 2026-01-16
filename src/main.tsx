@@ -18,9 +18,33 @@ const loadAmplifyOutputs = async () => {
   return {}
 }
 
+const loadAmplifyConfigFromEnv = () => {
+  const region = import.meta.env.VITE_AWS_REGION
+  const userPoolId = import.meta.env.VITE_USER_POOL_ID
+  const userPoolClientId = import.meta.env.VITE_USER_POOL_CLIENT_ID
+  const identityPoolId = import.meta.env.VITE_IDENTITY_POOL_ID
+
+  if (!region || !userPoolId || !userPoolClientId) {
+    return {}
+  }
+
+  return {
+    Auth: {
+      Cognito: {
+        userPoolId,
+        userPoolClientId,
+        identityPoolId: identityPoolId || undefined,
+        region,
+      },
+    },
+  }
+}
+
 const startApp = async () => {
   const outputs = await loadAmplifyOutputs()
-  Amplify.configure(outputs)
+  const envConfig = loadAmplifyConfigFromEnv()
+  const hasOutputs = Object.keys(outputs).length > 0
+  Amplify.configure(hasOutputs ? outputs : envConfig)
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

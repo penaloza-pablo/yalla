@@ -1,5 +1,9 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import type { ConversationMessage, ConversationMessageContent } from '@aws-amplify/ui-react-ai'
+import { Amplify } from 'aws-amplify'
+import type {
+  ConversationMessage,
+  ConversationMessageContent,
+} from '@aws-amplify/ui-react-ai'
 import { useAIConversation } from './client'
 import './App.css'
 
@@ -485,10 +489,7 @@ function App() {
     locations: [],
     statuses: [],
   })
-  const [chatInput, setChatInput] = useState('')
-  const [{ data: chatData, isLoading: isChatLoading }, handleSendMessage] =
-    useAIConversation('chatbot')
-  const chatMessages = (chatData?.messages ?? []) as ConversationMessage[]
+  const [isChatbotConfigured, setIsChatbotConfigured] = useState(false)
 
   const formatChatContent = (content: ConversationMessageContent[]) =>
     content
@@ -500,6 +501,71 @@ function App() {
       })
       .filter(Boolean)
       .join(' ')
+
+  const ChatbotView = () => {
+    const [chatInput, setChatInput] = useState('')
+    const [{ data: chatData, isLoading: isChatLoading }, handleSendMessage] =
+      useAIConversation('chatbot')
+    const chatMessages = (chatData?.messages ?? []) as ConversationMessage[]
+
+    return (
+      <section className="card">
+        <h1 className="page-title">Chatbot</h1>
+        <p className="subtitle">
+          Ask questions about inventory and alerts data.
+        </p>
+        <div className="chatbot-container">
+          <div className="chat-window">
+            {chatMessages.length ? (
+              chatMessages.map((message) => (
+                <div
+                  className={`chat-message ${
+                    message.role === 'user' ? 'is-user' : 'is-assistant'
+                  }`}
+                  key={message.id}
+                >
+                  <p className="chat-role">
+                    {message.role === 'user' ? 'You' : 'Assistant'}
+                  </p>
+                  <p className="chat-content">
+                    {formatChatContent(message.content)}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="chat-empty">
+                Start a conversation to see responses here.
+              </p>
+            )}
+          </div>
+          <div className="chat-input-row">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              placeholder="Ask about inventory or alerts..."
+              className="chat-input"
+            />
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => {
+                const trimmed = chatInput.trim()
+                if (!trimmed) {
+                  return
+                }
+                handleSendMessage({ content: [{ text: trimmed }] })
+                setChatInput('')
+              }}
+              disabled={isChatLoading}
+            >
+              {isChatLoading ? 'Sending...' : 'Send'}
+            </button>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   const lowStockCount = useMemo(
     () =>
@@ -600,6 +666,10 @@ function App() {
   }
 
   useEffect(() => {
+    const config = Amplify.getConfig() as {
+      data?: Record<string, unknown>
+    }
+    setIsChatbotConfigured(Boolean(config?.data))
     if (activePage === 'Inventory') {
       void fetchInventory()
     }
@@ -1641,61 +1711,19 @@ function App() {
             </section>
           </>
         ) : activePage === 'Chatbot' ? (
-          <section className="card">
-            <h1 className="page-title">Chatbot</h1>
-            <p className="subtitle">
-              Ask questions about inventory and alerts data.
-            </p>
-            <div className="chatbot-container">
-              <div className="chat-window">
-                {chatMessages.length ? (
-                  chatMessages.map((message) => (
-                    <div
-                      className={`chat-message ${
-                        message.role === 'user' ? 'is-user' : 'is-assistant'
-                      }`}
-                      key={message.id}
-                    >
-                      <p className="chat-role">
-                        {message.role === 'user' ? 'You' : 'Assistant'}
-                      </p>
-                      <p className="chat-content">
-                        {formatChatContent(message.content)}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="chat-empty">
-                    Start a conversation to see responses here.
-                  </p>
-                )}
-              </div>
-              <div className="chat-input-row">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(event) => setChatInput(event.target.value)}
-                  placeholder="Ask about inventory or alerts..."
-                  className="chat-input"
-                />
-                <button
-                  className="btn-primary"
-                  type="button"
-                  onClick={() => {
-                    const trimmed = chatInput.trim()
-                    if (!trimmed) {
-                      return
-                    }
-                      handleSendMessage({ content: [{ text: trimmed }] })
-                    setChatInput('')
-                  }}
-                  disabled={isChatLoading}
-                >
-                  {isChatLoading ? 'Sending...' : 'Send'}
-                </button>
-              </div>
-            </div>
-          </section>
+          isChatbotConfigured ? (
+            <ChatbotView />
+          ) : (
+            <section className="card">
+              <h1 className="page-title">Chatbot</h1>
+              <p className="subtitle">
+                Chatbot is not configured in this environment yet.
+              </p>
+              <p className="chat-empty">
+                Ensure the Amplify AI backend outputs are available in hosting.
+              </p>
+            </section>
+          )
         ) : (
           <section className="card">
             <h1 className="page-title">{activePage}</h1>
