@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import type { ConversationMessage, ConversationMessageContent } from '@aws-amplify/ui-react-ai'
 import { useAIConversation } from './client'
 import './App.css'
 
@@ -36,12 +37,6 @@ type AlertRow = {
   origin: string
   createdBy: string
   snoozeUntil?: string
-}
-
-type ChatMessage = {
-  id: string
-  role: string
-  content: string
 }
 
 type InventoryFormState = {
@@ -493,7 +488,18 @@ function App() {
   const [chatInput, setChatInput] = useState('')
   const [{ data: chatData, isLoading: isChatLoading }, handleSendMessage] =
     useAIConversation('chatbot')
-  const chatMessages = (chatData?.messages ?? []) as ChatMessage[]
+  const chatMessages = (chatData?.messages ?? []) as ConversationMessage[]
+
+  const formatChatContent = (content: ConversationMessageContent[]) =>
+    content
+      .map((part) => {
+        if ('text' in part && typeof part.text === 'string') {
+          return part.text
+        }
+        return ''
+      })
+      .filter(Boolean)
+      .join(' ')
 
   const lowStockCount = useMemo(
     () =>
@@ -1653,7 +1659,9 @@ function App() {
                       <p className="chat-role">
                         {message.role === 'user' ? 'You' : 'Assistant'}
                       </p>
-                      <p className="chat-content">{message.content}</p>
+                      <p className="chat-content">
+                        {formatChatContent(message.content)}
+                      </p>
                     </div>
                   ))
                 ) : (
@@ -1678,7 +1686,7 @@ function App() {
                     if (!trimmed) {
                       return
                     }
-                    handleSendMessage({ content: trimmed })
+                      handleSendMessage({ content: [{ text: trimmed }] })
                     setChatInput('')
                   }}
                   disabled={isChatLoading}
