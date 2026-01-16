@@ -678,6 +678,10 @@ function App() {
     }
   }, [activePage, fetchAlerts, fetchInventory])
 
+  useEffect(() => {
+    void fetchAlerts()
+  }, [fetchAlerts])
+
   const openNewItem = () => {
     setFormValues(emptyFormState)
     setFormError(null)
