@@ -14,7 +14,7 @@ const schema = a.schema({
     .authorization((allow) => [allow.guest()]),
   chatbot: a
     .conversation({
-      aiModel: a.ai.model('Claude 3.5 Haiku'),
+      aiModel: a.ai.model('Claude 3 Haiku'),
       systemPrompt:
         'You are a vacation rental operations assistant with access to inventory and alerts data. Answer clearly, summarize when helpful, and highlight actionable insights.',
     })
