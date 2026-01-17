@@ -504,9 +504,74 @@ function App() {
 
   const ChatbotView = () => {
     const [chatInput, setChatInput] = useState('')
+    const [debugOpen, setDebugOpen] = useState(false)
+    const [debugInfo, setDebugInfo] = useState<{
+      outputsStatus: string
+      outputsKeys: string[]
+      outputsHasData: boolean
+      outputsHasAuth: boolean
+      configKeys: string[]
+      configHasData: boolean
+      configHasAuth: boolean
+    }>({
+      outputsStatus: 'Not checked',
+      outputsKeys: [],
+      outputsHasData: false,
+      outputsHasAuth: false,
+      configKeys: [],
+      configHasData: false,
+      configHasAuth: false,
+    })
     const [{ data: chatData, isLoading: isChatLoading }, handleSendMessage] =
       useAIConversation('chatbot')
     const chatMessages = (chatData?.messages ?? []) as ConversationMessage[]
+
+    useEffect(() => {
+      const config = Amplify.getConfig() as Record<string, unknown>
+      const hasData = Boolean((config as { data?: unknown }).data)
+      const hasAuth = Boolean(
+        (config as { Auth?: { Cognito?: unknown } }).Auth?.Cognito,
+      )
+
+      setDebugInfo((current) => ({
+        ...current,
+        configKeys: Object.keys(config ?? {}),
+        configHasData: hasData,
+        configHasAuth: hasAuth,
+      }))
+
+      const checkOutputs = async () => {
+        try {
+          const response = await fetch('/amplify_outputs.json', {
+            cache: 'no-store',
+          })
+          if (!response.ok) {
+            setDebugInfo((current) => ({
+              ...current,
+              outputsStatus: `HTTP ${response.status}`,
+            }))
+            return
+          }
+          const outputs = (await response.json()) as Record<string, unknown>
+          setDebugInfo((current) => ({
+            ...current,
+            outputsStatus: 'Loaded',
+            outputsKeys: Object.keys(outputs ?? {}),
+            outputsHasData: Boolean((outputs as { data?: unknown }).data),
+            outputsHasAuth: Boolean(
+              (outputs as { Auth?: { Cognito?: unknown } }).Auth?.Cognito,
+            ),
+          }))
+        } catch {
+          setDebugInfo((current) => ({
+            ...current,
+            outputsStatus: 'Fetch failed',
+          }))
+        }
+      }
+
+      void checkOutputs()
+    }, [])
 
     return (
       <section className="card">
@@ -561,7 +626,40 @@ function App() {
             >
               {isChatLoading ? 'Sending...' : 'Send'}
             </button>
+            <button
+              className="btn-ghost"
+              type="button"
+              onClick={() => setDebugOpen((current) => !current)}
+            >
+              {debugOpen ? 'Hide debug' : 'Show debug'}
+            </button>
           </div>
+          {debugOpen ? (
+            <div className="chat-debug">
+              <p className="detail-label">Amplify config</p>
+              <p className="detail-value">
+                Keys: {debugInfo.configKeys.join(', ') || 'None'}
+              </p>
+              <p className="detail-value">
+                Auth configured: {debugInfo.configHasAuth ? 'Yes' : 'No'}
+              </p>
+              <p className="detail-value">
+                AI configured: {debugInfo.configHasData ? 'Yes' : 'No'}
+              </p>
+
+              <p className="detail-label">amplify_outputs.json</p>
+              <p className="detail-value">Status: {debugInfo.outputsStatus}</p>
+              <p className="detail-value">
+                Keys: {debugInfo.outputsKeys.join(', ') || 'None'}
+              </p>
+              <p className="detail-value">
+                Auth configured: {debugInfo.outputsHasAuth ? 'Yes' : 'No'}
+              </p>
+              <p className="detail-value">
+                AI configured: {debugInfo.outputsHasData ? 'Yes' : 'No'}
+              </p>
+            </div>
+          ) : null}
         </div>
       </section>
     )

@@ -460,6 +460,14 @@
   font-size: 0.95rem;
 }
 
+.chat-debug {
+  border-top: 1px solid #e4e7ec;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -730,7 +738,7 @@ th {
 
   .page-title {
     font-size: 1.6rem;
-  }
+}
 
   .search-input {
     width: 100%;
@@ -750,7 +758,7 @@ th {
 
   .filter-grid {
     grid-template-columns: 1fr;
-  }
+}
 
   .detail-grid {
     grid-template-columns: 1fr;
