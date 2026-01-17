@@ -4,7 +4,15 @@ backend:
     build:
       commands:
         - npm ci --include=dev
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AMPLIFY_APP_ID
+        - |
+          BRANCH="${AWS_BRANCH:-${AMPLIFY_BRANCH:-}}"
+          APP_ID="${AMPLIFY_APP_ID:-${AWS_APP_ID:-}}"
+          if [ -z "$BRANCH" ] || [ -z "$APP_ID" ]; then
+            echo "Missing BRANCH or APP_ID for ampx pipeline-deploy."
+            echo "Set AMPLIFY_BRANCH and AMPLIFY_APP_ID as environment variables."
+            exit 1
+          fi
+          npx ampx pipeline-deploy --branch "$BRANCH" --app-id "$APP_ID"
 frontend:
   phases:
     preBuild:
