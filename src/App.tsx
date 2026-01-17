@@ -634,36 +634,50 @@ function App() {
               {debugOpen ? 'Hide debug' : 'Show debug'}
             </button>
           </div>
-          {debugOpen ? (
-            <div className="chat-debug">
-              <p className="detail-label">Amplify config</p>
-              <p className="detail-value">
-                Keys: {debugInfo.configKeys.join(', ') || 'None'}
-              </p>
-              <p className="detail-value">
-                Auth configured: {debugInfo.configHasAuth ? 'Yes' : 'No'}
-              </p>
-              <p className="detail-value">
-                AI configured: {debugInfo.configHasData ? 'Yes' : 'No'}
-              </p>
-
-              <p className="detail-label">amplify_outputs.json</p>
-              <p className="detail-value">Status: {debugInfo.outputsStatus}</p>
-              <p className="detail-value">
-                Keys: {debugInfo.outputsKeys.join(', ') || 'None'}
-              </p>
-              <p className="detail-value">
-                Auth configured: {debugInfo.outputsHasAuth ? 'Yes' : 'No'}
-              </p>
-              <p className="detail-value">
-                AI configured: {debugInfo.outputsHasData ? 'Yes' : 'No'}
-              </p>
-            </div>
-          ) : null}
+          {debugOpen ? <ChatbotDebugPanel debugInfo={debugInfo} /> : null}
         </div>
       </section>
     )
   }
+
+  const ChatbotDebugPanel = ({
+    debugInfo,
+  }: {
+    debugInfo: {
+      outputsStatus: string
+      outputsKeys: string[]
+      outputsHasData: boolean
+      outputsHasAuth: boolean
+      configKeys: string[]
+      configHasData: boolean
+      configHasAuth: boolean
+    }
+  }) => (
+    <div className="chat-debug">
+      <p className="detail-label">Amplify config</p>
+      <p className="detail-value">
+        Keys: {debugInfo.configKeys.join(', ') || 'None'}
+      </p>
+      <p className="detail-value">
+        Auth configured: {debugInfo.configHasAuth ? 'Yes' : 'No'}
+      </p>
+      <p className="detail-value">
+        AI configured: {debugInfo.configHasData ? 'Yes' : 'No'}
+      </p>
+
+      <p className="detail-label">amplify_outputs.json</p>
+      <p className="detail-value">Status: {debugInfo.outputsStatus}</p>
+      <p className="detail-value">
+        Keys: {debugInfo.outputsKeys.join(', ') || 'None'}
+      </p>
+      <p className="detail-value">
+        Auth configured: {debugInfo.outputsHasAuth ? 'Yes' : 'No'}
+      </p>
+      <p className="detail-value">
+        AI configured: {debugInfo.outputsHasData ? 'Yes' : 'No'}
+      </p>
+    </div>
+  )
 
   const lowStockCount = useMemo(
     () =>
@@ -1824,6 +1838,41 @@ function App() {
               <p className="chat-empty">
                 Ensure the Amplify AI backend outputs are available in hosting.
               </p>
+              <div className="chatbot-container">
+                <button
+                  className="btn-ghost"
+                  type="button"
+                  onClick={() => {
+                    const debugPanel = document.querySelector(
+                      '[data-chatbot-debug]',
+                    ) as HTMLDivElement | null
+                    if (debugPanel) {
+                      debugPanel.removeAttribute('data-hidden')
+                      return
+                    }
+                  }}
+                >
+                  Show debug
+                </button>
+                <div data-chatbot-debug>
+                  <ChatbotDebugPanel
+                    debugInfo={{
+                      outputsStatus: 'Not checked',
+                      outputsKeys: [],
+                      outputsHasData: false,
+                      outputsHasAuth: false,
+                      configKeys: Object.keys(Amplify.getConfig() ?? {}),
+                      configHasData: Boolean(
+                        (Amplify.getConfig() as { data?: unknown }).data,
+                      ),
+                      configHasAuth: Boolean(
+                        (Amplify.getConfig() as { Auth?: { Cognito?: unknown } })
+                          .Auth?.Cognito,
+                      ),
+                    }}
+                  />
+                </div>
+              </div>
             </section>
           )
         ) : (
