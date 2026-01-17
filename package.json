@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-amplify-outputs.mjs && tsc -b && vite build && if [ -f amplify_outputs.json ]; then cp amplify_outputs.json dist/; fi",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
